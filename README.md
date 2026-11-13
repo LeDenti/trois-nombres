@@ -1,5 +1,9 @@
 # Trois nombres, lecteur public (article 4 du code bonobo)
 
+En ligne : https://ledenti.github.io/trois-nombres/ (dépôt public
+https://github.com/LeDenti/trois-nombres, commits signés matter-x-).
+Toute modification : éditer ici puis pousser sur le dépôt.
+
 Une page, `index.html`, sans serveur ni dépendance : elle ouvre un WebSocket
 vers un nœud public XRPL et, pour une clé donnée, affiche :
 
