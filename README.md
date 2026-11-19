@@ -16,6 +16,8 @@ chooses the AI provider and pays for it with their own key. The site has no serv
 - **Expired**: successful `EscrowCancel` on an escrow the key created, possible only after its cancel date.
 - Only `tesSUCCESS` transactions count. No memo or escrow content is read: public counter, private content (article 4 of the [bonobo code](https://zenodo.org/records/24176443)).
 
+Live: https://ledenti.github.io/trois-nombres/ (French original without the assistant: `fr/`).
+
 Testnet keys to try: `rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw` (4 / 4 / 0),
 `r9eDSQ2Cex3ahuMtwkqMyvrQBNfYEYqzWo` (9 / 6 / 3), `rUuvu1XPgd5GtTgrXQKiwrHq3fb2xiHZMW`
 (an oracle: 0 / 0 / 0, but 50 kept and 13 let expire for others). Counts as of 18/11/2026.
@@ -43,6 +45,8 @@ visitor sees a consent card naming the service before anything is sent, and only
 address and network go out.
 
 ## The MCP service (`mcp/server.mjs`)
+
+Live at **https://three-numbers-mcp.onrender.com/mcp** (free instance: the first call after a quiet spell can take up to a minute).
 
 A read-only [MCP](https://modelcontextprotocol.io) server any agent can use, built on the
 same counting code as the page (`script.js`), so every client gets the same numbers.

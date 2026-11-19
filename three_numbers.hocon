@@ -155,7 +155,7 @@ How to work:
 """,
             "tools": [
                 {
-                    "url": "http://127.0.0.1:8787/mcp",
+                    "url": "https://three-numbers-mcp.onrender.com/mcp",
                     "tools": ["read_key"]
                 }
             ]
