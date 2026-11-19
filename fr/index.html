@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trois nombres</title>
+<meta name="description" content="Pour une clé XRPL : engagements signés, tenus, expirés. Lu sur la chaîne, rien d'autre. Article 4 du code bonobo.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout : une colonne de lecture, le compteur en tête, la ligne du temps dessous. */
+:root {
+  --bg: #f7f5f0;
+  --fg: #1d1b17;
+  --muted: #6b665c;
+  --line: #d9d4c8;
+  --panel: #ffffff;
+  --accent: #2b5d4a;
+  --ok: #2b5d4a;
+  --warn: #9a5b12;
+  --bad: #8c2f2f;
+  --font-text: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15140f; --fg: #ece8df; --muted: #a39d90; --line: #35322a;
+    --panel: #1e1c16; --accent: #7fc3a3; --ok: #7fc3a3; --warn: #e0a24d; --bad: #e07a7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15140f; --fg: #ece8df; --muted: #a39d90; --line: #35322a;
+  --panel: #1e1c16; --accent: #7fc3a3; --ok: #7fc3a3; --warn: #e0a24d; --bad: #e07a7a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-text); font-size: 16px; line-height: 1.5;
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 760px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-size: 1.6rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
+p { margin: 0; max-width: 62ch; }
+.lead { color: var(--muted); }
+form { display: grid; gap: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+label { font-size: 0.85rem; color: var(--muted); display: grid; gap: 4px; flex: 1 1 260px; min-width: 0; }
+input, select, button {
+  font: inherit; color: var(--fg); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px;
+}
+input { font-family: var(--font-mono); font-size: 0.95rem; width: 100%; }
+select { flex: 0 1 180px; }
+button { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 600; cursor: pointer; padding-inline: 18px; }
+button:disabled { opacity: 0.6; cursor: wait; }
+:is(input, select, button):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ex { font-size: 0.85rem; color: var(--muted); }
+.ex a { color: var(--accent); font-family: var(--font-mono); font-size: 0.8rem; word-break: break-all; }
+.numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.n { background: var(--panel); padding: 18px 16px; display: grid; gap: 2px; min-width: 0; }
+.n b { font-size: 2.6rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+.n span { font-size: 0.85rem; color: var(--muted); }
+.n.ok b { color: var(--ok); } .n.bad b { color: var(--bad); }
+.sub { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 0.9rem; color: var(--muted); margin-top: 10px; }
+.sub b { color: var(--fg); font-weight: 500; font-variant-numeric: tabular-nums; }
+.status { font-size: 0.9rem; color: var(--muted); min-height: 1.4em; }
+.status.err { color: var(--bad); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); white-space: nowrap; }
+th { border-top: 0; color: var(--muted); font-weight: 500; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+td.mono, td a { font-family: var(--font-mono); font-size: 0.82rem; }
+td a { color: var(--accent); text-decoration: none; }
+td a:hover { text-decoration: underline; }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 500; border: 1px solid currentColor; }
+.pill.tenu { color: var(--ok); } .pill.expire { color: var(--bad); } .pill.encours { color: var(--warn); }
+.foot { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+.foot a { color: var(--accent); }
+@media (max-width: 520px) {
+  .numbers { grid-template-columns: 1fr; }
+  .n b { font-size: 2.1rem; }
+}
+@media (prefers-reduced-motion: no-preference) { button { transition: opacity .15s; } }
+</style>
+</head>
+<body>
+<main>
+  <header style="display:grid;gap:8px">
+    <h1>Trois nombres</h1>
+    <p class="lead">Pour une clé XRPL, ce que la chaîne montre de ses engagements : signés, tenus, expirés. Le contenu reste privé, le compte est public.</p>
+  </header>
+
+  <form id="f">
+    <label>Clé (adresse r…)
+      <input id="k" name="k" autocomplete="off" spellcheck="false" placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" required>
+    </label>
+    <div class="row">
+      <select id="net" name="net" aria-label="Réseau">
+        <option value="wss://s.altnet.rippletest.net:51233">Testnet</option>
+        <option value="wss://s2.ripple.com">Mainnet</option>
+      </select>
+      <button id="go" type="submit">Lire</button>
+    </div>
+    <p class="ex">Exemple testnet : <a href="#" data-k="rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw">rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw</a></p>
+  </form>
+
+  <section id="res" hidden>
+    <h2 id="who" style="text-transform:none;letter-spacing:0;font-family:var(--font-mono)"></h2>
+    <div class="numbers">
+      <div class="n"><b id="n1">0</b><span>engagements signés</span></div>
+      <div class="n ok"><b id="n2">0</b><span>tenus</span></div>
+      <div class="n bad"><b id="n3">0</b><span>expirés</span></div>
+    </div>
+    <div class="sub">
+      <span>en cours sur le registre <b id="n4">0</b></span>
+      <span>défenseurs désignés <b id="n5">0</b></span>
+      <span>pour d'autres, a tenu <b id="n6">0</b> et laissé expirer <b id="n7">0</b></span>
+    </div>
+  </section>
+  <p id="st" class="status" aria-live="polite"></p>
+
+  <section id="tl" hidden>
+    <h2>Ligne du temps</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Date</th><th>Acte</th><th>État</th><th>Transaction</th></tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="foot">Lecture directe d'un nœud public XRPL, sans serveur intermédiaire : un escrow créé par la clé est un engagement signé ; finalisé, il est tenu ; annulé après sa date, il est expiré. Aucun mémo n'est affiché. Article 4 du <a href="https://zenodo.org/records/24176443">code bonobo</a> : compteur public, contenu privé. Signé matter-x-.</p>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const RIPPLE_EPOCH = 946684800;
+  const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
+  const ADDR = /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/;
+
+  let ws = null, seq = 0, pending = new Map();
+  function connect(url) {
+    return new Promise((ok, ko) => {
+      if (ws && ws.url === url && ws.readyState === 1) return ok(ws);
+      if (ws) { try { ws.close(); } catch (e) {} }
+      const s = new WebSocket(url);
+      s.onopen = () => { ws = s; ok(s); };
+      s.onerror = () => ko(new Error('Le nœud ' + url + ' ne répond pas.'));
+      s.onclose = () => { for (const [, p] of pending) p.ko(new Error('Connexion fermée.')); pending.clear(); };
+      s.onmessage = ev => {
+        const m = JSON.parse(ev.data);
+        const p = pending.get(m.id); if (!p) return; pending.delete(m.id);
+        if (m.status === 'success') p.ok(m.result);
+        else p.ko(new Error(m.error_message || m.error || 'Erreur du nœud'));
+      };
+    });
+  }
+  function rpc(cmd) {
+    return new Promise((ok, ko) => { const id = ++seq; pending.set(id, { ok, ko }); ws.send(JSON.stringify({ id, ...cmd })); });
+  }
+
+  async function allTx(account) {
+    const out = []; let marker;
+    do {
+      const r = await rpc({ command: 'account_tx', account, ledger_index_min: -1, ledger_index_max: -1, limit: 400, forward: true, marker });
+      out.push(...(r.transactions || [])); marker = r.marker;
+      $('st').textContent = out.length + ' transactions lues…';
+    } while (marker);
+    return out;
+  }
+  async function liveObjects(account, type) {
+    const out = []; let marker;
+    do {
+      const r = await rpc({ command: 'account_objects', account, type, limit: 400, marker });
+      out.push(...(r.account_objects || [])); marker = r.marker;
+    } while (marker);
+    return out;
+  }
+
+  function explorer(netUrl, hash) {
+    return (netUrl.includes('altnet') ? 'https://testnet.xrpl.org/transactions/' : 'https://livenet.xrpl.org/transactions/') + hash;
+  }
+
+  async function read(key, netUrl) {
+    const st = $('st'); st.className = 'status';
+    $('res').hidden = true; $('tl').hidden = true;
+    if (!ADDR.test(key)) { st.className = 'status err'; st.textContent = 'Ce n\'est pas une adresse XRPL (elle commence par r, 25 à 35 caractères).'; return; }
+    $('go').disabled = true;
+    try {
+      st.textContent = 'Connexion au nœud…';
+      await connect(netUrl);
+      const [txs, escrows, signers] = await Promise.all([allTx(key), liveObjects(key, 'escrow'), liveObjects(key, 'signer_list')]);
+      let signed = 0, kept = 0, expired = 0, keptForOthers = 0, expiredForOthers = 0;
+      const rows = [];
+      for (const t of txs) {
+        const tx = t.tx || t.tx_json || {}; const meta = t.meta || {};
+        if (meta.TransactionResult !== 'tesSUCCESS') continue;
+        const type = tx.TransactionType; if (!type || !type.startsWith('Escrow')) continue;
+        const when = t.close_time_iso ? new Date(t.close_time_iso) : new Date((tx.date + RIPPLE_EPOCH) * 1000);
+        const hash = tx.hash || t.hash;
+        if (type === 'EscrowCreate' && tx.Account === key) { signed++; rows.push({ when, act: 'Engagement signé', state: null, hash, seq: tx.Sequence || tx.TicketSequence }); }
+        else if (type === 'EscrowFinish' && tx.Owner === key) { kept++; rows.push({ when, act: 'Engagement tenu', state: 'tenu', hash, seq: tx.OfferSequence }); }
+        else if (type === 'EscrowCancel' && tx.Owner === key) { expired++; rows.push({ when, act: 'Engagement expiré', state: 'expire', hash, seq: tx.OfferSequence }); }
+        else if (type === 'EscrowFinish' && tx.Account === key) keptForOthers++;
+        else if (type === 'EscrowCancel' && tx.Account === key) expiredForOthers++;
+      }
+      // État de chaque engagement signé : retrouvé par le numéro de séquence de l'escrow.
+      const closed = new Map();
+      for (const r of rows) if (r.state) closed.set(r.seq, r.state);
+      for (const r of rows) if (!r.state) r.state = closed.get(r.seq) || 'encours';
+
+      $('who').textContent = key;
+      $('n1').textContent = fmt(signed); $('n2').textContent = fmt(kept); $('n3').textContent = fmt(expired);
+      $('n4').textContent = fmt(escrows.length);
+      const sl = signers[0]; $('n5').textContent = fmt(sl ? (sl.SignerEntries || []).length : 0);
+      $('n6').textContent = fmt(keptForOthers); $('n7').textContent = fmt(expiredForOthers);
+      $('res').hidden = false;
+
+      const tb = $('tb'); tb.textContent = '';
+      rows.sort((a, b) => b.when - a.when);
+      for (const r of rows) {
+        const tr = document.createElement('tr');
+        const label = { tenu: 'tenu', expire: 'expiré', encours: 'en cours' }[r.state];
+        const td1 = document.createElement('td'); td1.className = 'mono'; td1.textContent = r.when.toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+        const td2 = document.createElement('td'); td2.textContent = r.act;
+        const td3 = document.createElement('td'); const pill = document.createElement('span'); pill.className = 'pill ' + r.state; pill.textContent = label; td3.appendChild(pill);
+        const td4 = document.createElement('td'); const a = document.createElement('a'); a.href = explorer(netUrl, r.hash); a.target = '_blank'; a.rel = 'noopener'; a.textContent = r.hash.slice(0, 12) + '…'; td4.appendChild(a);
+        tr.append(td1, td2, td3, td4); tb.appendChild(tr);
+      }
+      $('tl').hidden = rows.length === 0;
+      st.textContent = txs.length === 0 ? 'Aucune transaction : cette clé n\'existe pas encore sur ce réseau, ou n\'a rien fait.' : txs.length + ' transactions lues, ' + rows.length + ' actes d\'engagement.';
+      try { location.hash = key; } catch (e) {}
+    } catch (e) {
+      st.className = 'status err'; st.textContent = e.message;
+    } finally { $('go').disabled = false; }
+  }
+
+  $('f').addEventListener('submit', ev => { ev.preventDefault(); read($('k').value.trim(), $('net').value); });
+  document.querySelectorAll('a[data-k]').forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); $('k').value = a.dataset.k; read(a.dataset.k, $('net').value); }));
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (ADDR.test(h)) { $('k').value = h; read(h, $('net').value); }
+})();
+</script>
+</body>
+</html>

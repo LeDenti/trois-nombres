@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Trois nombres</title>
-<meta name="description" content="Pour une clé XRPL : engagements signés, tenus, expirés. Lu sur la chaîne, rien d'autre. Article 4 du code bonobo.">
+<title>Three Numbers</title>
+<meta name="description" content="For an XRPL key: commitments signed, kept, expired. Read from the ledger, nothing else. With an assistant that runs in your browser on your own AI key.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout : une colonne de lecture, le compteur en tête, la ligne du temps dessous. */
@@ -86,166 +86,176 @@ td a:hover { text-decoration: underline; }
   .n b { font-size: 2.1rem; }
 }
 @media (prefers-reduced-motion: no-preference) { button { transition: opacity .15s; } }
+
+/* ---- Assistant ---- */
+/* Assistant layout. Append to the site's stylesheet and set the colors to the site's palette. */
+.assistant { margin-top: 8px; display: grid; gap: 10px; }
+.assistant h2 { text-transform: none; letter-spacing: 0; font-size: 1.15rem; color: var(--fg); margin: 0; }
+.assistant-note { font-size: 0.85rem; color: var(--muted); }
+
+/* The runtime reads these variables for its chat, settings and agent panels.
+   The chat background below also uses --ns-bg. White text sits on --ns-primary (the
+   visitor's messages, Send, and the chat form and settings buttons) and on --ns-accent
+   (Send while a turn is steered), so give both at least 4.5:1 contrast with white.
+   --ns-accent also underlines the chat header. */
+#agent-app {
+  --ns-font: var(--font-text);
+  --ns-bg: var(--panel);
+  --ns-fg: var(--fg);
+  --ns-primary: #2b5d4a;
+  --ns-accent: #2b5d4a;
+  --ns-border: var(--line);
+  --ns-panelbg: var(--panel);
+  --ns-msgbg: var(--bg);
+  --ns-muted: var(--muted);
+}
+
+.assistant-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+/* Set the height once the runtime has mounted the chat, so a failed load leaves no
+   empty box. */
+#agent-app.ns-composed-app [data-ns-slot="chat"] { height: 560px; }
+/* The runtime gives the chat no background of its own. Keep --ns-msgbg different from
+   --ns-bg, or bot replies lose their bubble. */
+#agent-app .ns-chat { background: var(--ns-bg); }
+
+/* Site-wide form rules often stretch the runtime's own controls. Undo them here. */
+#agent-app input[type="checkbox"],
+#agent-app input[type="radio"] { width: auto; }
+#agent-app .ns-header { flex-wrap: wrap; }
+/* Site label rules add margins and bold text, and the inputs inside the labels inherit
+   the weight. */
+#agent-app .ns-settings-body label { margin: 4px 0; font-weight: 400; }
+/* Chat forms label radio groups with a legend, so site legend fonts would reach them. */
+#agent-app .ns-w-label { font-family: inherit; }
+/* Site label rules add margins to chat form fields and make their options bold. */
+#agent-app .ns-widget label { margin: 0; }
+#agent-app .ns-w-radio label,
+#agent-app .ns-w-multi label,
+#agent-app .ns-w-toggle { font-weight: 400; }
+/* The runtime sizes radio and multi-choice options but not the checkbox label. */
+#agent-app .ns-w-toggle { font-size: 13px; }
+/* The runtime spaces its buttons with gap. A site's button margin pushes Send below the input. */
+#agent-app button { margin: 0; }
+/* Chat choices are buttons with a light background. A site's button color can hide their
+   titles. */
+#agent-app .ns-w-choice { color: var(--ns-fg); }
+/* A site's button:hover background also reaches the runtime's plain buttons, behind
+   their dark text. Keep the runtime's own backgrounds. */
+#agent-app .ns-devtoggle:not(.on):hover,
+#agent-app .ns-modal-close:hover { background: transparent; }
+#agent-app .ns-w-choice:disabled:hover { background: #fafbfc; }
+/* The runtime's message rule hides the partner consent card's own background, and its
+   Decline label then has too little contrast. */
+#agent-app .ns-consent { background: #fffbeb; }
+/* While a consent card waits, the status line above it already says "Contacting", though
+   nothing has been sent. Hide it until the visitor answers. */
+#agent-app .ns-msgs:has(.ns-consent-actions) > .ns-turn-status { display: none; }
+/* Long links in a reply would run out of the bubble on a phone. "anywhere" would also
+   let the consent card's buttons shrink and split their labels. */
+#agent-app .ns-msg { overflow-wrap: break-word; }
+/* On a phone the consent card is too narrow for its three buttons in one row, and
+   "Always allow" breaks onto two lines. Keep each label whole and wrap the row. */
+#agent-app .ns-consent-actions { flex-wrap: wrap; }
+#agent-app .ns-consent-actions button { white-space: nowrap; }
+
+/* site.js and the runtime add their confirmation dialogs to <body>, outside #agent-app.
+   Site h2 rules reach the heading, and the two buttons touch. A right margin keeps
+   wrapped buttons lined up on the left. */
+body > dialog h2 { margin: 0 0 12px; font: 700 1.25em system-ui, sans-serif; }
+body > dialog button { margin-right: 8px; }
+/* site.js's dialog: the details in two columns, and a plain decline button, so the two
+   choices do not look the same. */
+.assistant-review { max-width: 640px; width: 85%; max-height: 85vh; overflow: auto; border: 1px solid #888; border-radius: 12px; padding: 24px; font: 16px system-ui, sans-serif; }
+.assistant-review dl { display: grid; grid-template-columns: fit-content(40%) 1fr; gap: 4px 16px; margin: 12px 0; }
+.assistant-review dt { font-weight: 600; }
+.assistant-review dd { margin: 0; overflow-wrap: anywhere; }
+.assistant-review details { margin: 12px 0; }
+.assistant-review pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.assistant-review .assistant-decline { background: transparent; color: inherit; border: 1px solid currentColor; }
+
+@media (max-width: 760px) {
+  .assistant-panels { grid-template-columns: 1fr; }
+  /* On a phone, each detail goes under its label, so an email is not split. */
+  .assistant-review dl { grid-template-columns: 1fr; gap: 0; }
+  .assistant-review dd { margin-bottom: 8px; }
+}
+
+/* The page paints every button in its accent color. The runtime's plain buttons keep their own look. */
+#agent-app button { font: inherit; font-size: 13px; padding: 6px 12px; }
+#agent-app input, #agent-app select, #agent-app textarea { width: auto; font-family: var(--font-text); }
+#agent-app .ns-settings-body input, #agent-app .ns-settings-body select { width: 100%; }
 </style>
+<script type="module" src="script.js"></script>
+<script type="module" src="site.js"></script>
 </head>
 <body>
 <main>
   <header style="display:grid;gap:8px">
-    <h1>Trois nombres</h1>
-    <p class="lead">Pour une clé XRPL, ce que la chaîne montre de ses engagements : signés, tenus, expirés. Le contenu reste privé, le compte est public.</p>
+    <h1>Three Numbers</h1>
+    <p class="lead">Before you deal with someone, read their key. For one XRPL key, the ledger shows how many commitments it signed, kept and let expire. The content stays private; the count is public.</p>
   </header>
 
   <form id="f">
-    <label>Clé (adresse r…)
+    <label>Key (address r…)
       <input id="k" name="k" autocomplete="off" spellcheck="false" placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" required>
     </label>
     <div class="row">
-      <select id="net" name="net" aria-label="Réseau">
-        <option value="wss://s.altnet.rippletest.net:51233">Testnet</option>
-        <option value="wss://xrplcluster.com">Mainnet</option>
+      <select id="net" name="net" aria-label="Network">
+        <option value="testnet">Testnet</option>
+        <option value="mainnet">Mainnet</option>
       </select>
-      <button id="go" type="submit">Lire</button>
+      <button id="go" type="submit">Read</button>
     </div>
-    <p class="ex">Exemple testnet : <a href="#" data-k="rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw">rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw</a></p>
+    <p class="ex">Testnet example: <a href="#" id="ex" data-k="rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw">rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw</a></p>
   </form>
 
   <section id="res" hidden>
     <h2 id="who" style="text-transform:none;letter-spacing:0;font-family:var(--font-mono)"></h2>
     <div class="numbers">
-      <div class="n"><b id="n1">0</b><span>engagements signés</span></div>
-      <div class="n ok"><b id="n2">0</b><span>tenus</span></div>
-      <div class="n bad"><b id="n3">0</b><span>expirés</span></div>
+      <div class="n"><b id="n1">0</b><span>commitments signed</span></div>
+      <div class="n ok"><b id="n2">0</b><span>kept</span></div>
+      <div class="n bad"><b id="n3">0</b><span>expired</span></div>
     </div>
     <div class="sub">
-      <span>en cours sur le registre <b id="n4">0</b></span>
-      <span>défenseurs désignés <b id="n5">0</b></span>
-      <span>pour d'autres, a tenu <b id="n6">0</b> et laissé expirer <b id="n7">0</b></span>
+      <span>open on the ledger <b id="n4">0</b></span>
+      <span>designated defenders <b id="n5">0</b></span>
+      <span>for others, kept <b id="n6">0</b> and let expire <b id="n7">0</b></span>
     </div>
   </section>
   <p id="st" class="status" aria-live="polite"></p>
 
   <section id="tl" hidden>
-    <h2>Ligne du temps</h2>
+    <h2>Timeline</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Date</th><th>Acte</th><th>État</th><th>Transaction</th></tr></thead>
+        <thead><tr><th>Date</th><th>Act</th><th>State</th><th>Transaction</th></tr></thead>
         <tbody id="tb"></tbody>
       </table>
     </div>
   </section>
 
-  <p class="foot">Lecture directe d'un nœud public XRPL, sans serveur intermédiaire : un escrow créé par la clé est un engagement signé ; finalisé, il est tenu ; annulé après sa date, il est expiré. Aucun mémo n'est affiché. Article 4 du <a href="https://zenodo.org/records/24176443">code bonobo</a> : compteur public, contenu privé. Signé matter-x-.</p>
+  <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
+    <h2 id="assistant-heading">Ask Three Numbers</h2>
+    <p>Ask in plain words about any key: its record, what the numbers mean, or how two keys compare. The assistant reads the ledger through this page.</p>
+    <p class="assistant-note">Your messages and the records it reads go to the AI provider you choose in the settings below, with your own key. This page has no server and pays for nothing. Nothing here can sign or send a transaction.</p>
+    <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+    <div id="agent-app">
+      <div data-ns-slot="header"></div>
+      <div class="assistant-panels">
+        <div data-ns-slot="chat"></div>
+        <div data-ns-slot="agents"></div>
+      </div>
+      <div data-ns-slot="settings"></div>
+    </div>
+  </section>
+
+  <p class="foot">Read straight from a public XRPL node, with no server in between: an escrow created by the key is a signed commitment; finished, it is kept; cancelled after its date, it expired. No memo is shown. Article 4 of the <a href="https://zenodo.org/records/24176443">bonobo code</a>: public counter, private content. An open agentic website: <a href="agent-manifest.json">agent-manifest.json</a>, <a href="three_numbers.network.json">agent network</a>. <a href="fr/">Version française (sans assistant)</a>. Signed matter-x-.</p>
 </main>
-
-<script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const RIPPLE_EPOCH = 946684800;
-  const fmt = n => new Intl.NumberFormat('fr-FR').format(n);
-  const ADDR = /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/;
-
-  let ws = null, seq = 0, pending = new Map();
-  function connect(url) {
-    return new Promise((ok, ko) => {
-      if (ws && ws.url === url && ws.readyState === 1) return ok(ws);
-      if (ws) { try { ws.close(); } catch (e) {} }
-      const s = new WebSocket(url);
-      s.onopen = () => { ws = s; ok(s); };
-      s.onerror = () => ko(new Error('Le nœud ' + url + ' ne répond pas.'));
-      s.onclose = () => { for (const [, p] of pending) p.ko(new Error('Connexion fermée.')); pending.clear(); };
-      s.onmessage = ev => {
-        const m = JSON.parse(ev.data);
-        const p = pending.get(m.id); if (!p) return; pending.delete(m.id);
-        if (m.status === 'success') p.ok(m.result);
-        else p.ko(new Error(m.error_message || m.error || 'Erreur du nœud'));
-      };
-    });
-  }
-  function rpc(cmd) {
-    return new Promise((ok, ko) => { const id = ++seq; pending.set(id, { ok, ko }); ws.send(JSON.stringify({ id, ...cmd })); });
-  }
-
-  async function allTx(account) {
-    const out = []; let marker;
-    do {
-      const r = await rpc({ command: 'account_tx', account, ledger_index_min: -1, ledger_index_max: -1, limit: 400, forward: true, marker });
-      out.push(...(r.transactions || [])); marker = r.marker;
-      $('st').textContent = out.length + ' transactions lues…';
-    } while (marker);
-    return out;
-  }
-  async function liveObjects(account, type) {
-    const out = []; let marker;
-    do {
-      const r = await rpc({ command: 'account_objects', account, type, limit: 400, marker });
-      out.push(...(r.account_objects || [])); marker = r.marker;
-    } while (marker);
-    return out;
-  }
-
-  function explorer(netUrl, hash) {
-    return (netUrl.includes('altnet') ? 'https://testnet.xrpl.org/transactions/' : 'https://livenet.xrpl.org/transactions/') + hash;
-  }
-
-  async function read(key, netUrl) {
-    const st = $('st'); st.className = 'status';
-    $('res').hidden = true; $('tl').hidden = true;
-    if (!ADDR.test(key)) { st.className = 'status err'; st.textContent = 'Ce n\'est pas une adresse XRPL (elle commence par r, 25 à 35 caractères).'; return; }
-    $('go').disabled = true;
-    try {
-      st.textContent = 'Connexion au nœud…';
-      await connect(netUrl);
-      const [txs, escrows, signers] = await Promise.all([allTx(key), liveObjects(key, 'escrow'), liveObjects(key, 'signer_list')]);
-      let signed = 0, kept = 0, expired = 0, keptForOthers = 0, expiredForOthers = 0;
-      const rows = [];
-      for (const t of txs) {
-        const tx = t.tx || t.tx_json || {}; const meta = t.meta || {};
-        if (meta.TransactionResult !== 'tesSUCCESS') continue;
-        const type = tx.TransactionType; if (!type || !type.startsWith('Escrow')) continue;
-        const when = t.close_time_iso ? new Date(t.close_time_iso) : new Date((tx.date + RIPPLE_EPOCH) * 1000);
-        const hash = tx.hash || t.hash;
-        if (type === 'EscrowCreate' && tx.Account === key) { signed++; rows.push({ when, act: 'Engagement signé', state: null, hash, seq: tx.Sequence || tx.TicketSequence }); }
-        else if (type === 'EscrowFinish' && tx.Owner === key) { kept++; rows.push({ when, act: 'Engagement tenu', state: 'tenu', hash, seq: tx.OfferSequence }); }
-        else if (type === 'EscrowCancel' && tx.Owner === key) { expired++; rows.push({ when, act: 'Engagement expiré', state: 'expire', hash, seq: tx.OfferSequence }); }
-        else if (type === 'EscrowFinish' && tx.Account === key) keptForOthers++;
-        else if (type === 'EscrowCancel' && tx.Account === key) expiredForOthers++;
-      }
-      // État de chaque engagement signé : retrouvé par le numéro de séquence de l'escrow.
-      const closed = new Map();
-      for (const r of rows) if (r.state) closed.set(r.seq, r.state);
-      for (const r of rows) if (!r.state) r.state = closed.get(r.seq) || 'encours';
-
-      $('who').textContent = key;
-      $('n1').textContent = fmt(signed); $('n2').textContent = fmt(kept); $('n3').textContent = fmt(expired);
-      $('n4').textContent = fmt(escrows.length);
-      const sl = signers[0]; $('n5').textContent = fmt(sl ? (sl.SignerEntries || []).length : 0);
-      $('n6').textContent = fmt(keptForOthers); $('n7').textContent = fmt(expiredForOthers);
-      $('res').hidden = false;
-
-      const tb = $('tb'); tb.textContent = '';
-      rows.sort((a, b) => b.when - a.when);
-      for (const r of rows) {
-        const tr = document.createElement('tr');
-        const label = { tenu: 'tenu', expire: 'expiré', encours: 'en cours' }[r.state];
-        const td1 = document.createElement('td'); td1.className = 'mono'; td1.textContent = r.when.toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
-        const td2 = document.createElement('td'); td2.textContent = r.act;
-        const td3 = document.createElement('td'); const pill = document.createElement('span'); pill.className = 'pill ' + r.state; pill.textContent = label; td3.appendChild(pill);
-        const td4 = document.createElement('td'); const a = document.createElement('a'); a.href = explorer(netUrl, r.hash); a.target = '_blank'; a.rel = 'noopener'; a.textContent = r.hash.slice(0, 12) + '…'; td4.appendChild(a);
-        tr.append(td1, td2, td3, td4); tb.appendChild(tr);
-      }
-      $('tl').hidden = rows.length === 0;
-      st.textContent = txs.length === 0 ? 'Aucune transaction : cette clé n\'existe pas encore sur ce réseau, ou n\'a rien fait.' : txs.length + ' transactions lues, ' + rows.length + ' actes d\'engagement.';
-      try { location.hash = key; } catch (e) {}
-    } catch (e) {
-      st.className = 'status err'; st.textContent = e.message;
-    } finally { $('go').disabled = false; }
-  }
-
-  $('f').addEventListener('submit', ev => { ev.preventDefault(); read($('k').value.trim(), $('net').value); });
-  document.querySelectorAll('a[data-k]').forEach(a => a.addEventListener('click', ev => { ev.preventDefault(); $('k').value = a.dataset.k; read(a.dataset.k, $('net').value); }));
-  const h = decodeURIComponent(location.hash.slice(1));
-  if (ADDR.test(h)) { $('k').value = h; read(h, $('net').value); }
-})();
-</script>
 </body>
 </html>

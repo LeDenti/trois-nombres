@@ -1,0 +1,83 @@
+{
+  "brand": "Three Numbers Assistant",
+  "networks": [
+    {
+      "name": "three_numbers",
+      "front_man": "reader",
+      "hocon": "./three_numbers.network.json",
+      "description": "Ask about any XRPL key's public track record: how many commitments it signed, kept and let expire, read live from the ledger.",
+      "tags": [
+        "agentified-website",
+        "xrpl",
+        "trust",
+        "escrow",
+        "reputation"
+      ],
+      "sample_queries": [
+        "What is the track record of rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw on testnet?",
+        "Show the example key on the page.",
+        "What does expired mean here, and does it prove someone cheated?",
+        "Who owns rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [
+    "http://127.0.0.1:8787"
+  ],
+  "peer_policy": {
+    "mode": "closed",
+    "deny_origins": [],
+    "note": "Local agents, page-local actions and the Three Numbers MCP service only."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "three_numbers",
+    "front_man": "reader",
+    "available": false,
+    "reason": "This is a static bundle; a public MCP facade requires an application host."
+  },
+  "theme": {
+    "primary": "#2b5d4a"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "three_numbers",
+        "front_man": "reader",
+        "aliases": [
+          "three_numbers",
+          "reader"
+        ],
+        "url": "three_numbers"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_page",
+      "read_key",
+      "show_key"
+    ]
+  }
+}

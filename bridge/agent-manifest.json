@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "three_numbers"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}
