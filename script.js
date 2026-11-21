@@ -508,6 +508,7 @@ export class Page {
       networks: networks,
       exampleKey: { address: "rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw", network: "testnet" },
       sourceText: "https://zenodo.org/records/24176443",
+      partners: [{ name: "Rule in force", what: "whether a French law article was in force on a date, with its XRPL anchor verified", link: "https://rule-in-force.onrender.com/" }],
       form: { address: this.el("k").value, network: this.el("net").value },
       status: this.status,
       shown: shown,
@@ -542,6 +543,7 @@ export class App {
   }
 }
 
-if (typeof window !== "undefined") {
+// Wire the form only on the page itself: the action bridge frame loads this module too.
+if (typeof window !== "undefined" && globalThis.document?.getElementById("f")) {
   App.wire();
 }

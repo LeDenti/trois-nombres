@@ -38,11 +38,17 @@ Testnet keys to try: `rGJsjkfmASA2ezXYDpTQJZDp9tRgCJAPhw` (4 / 4 / 0),
 Nothing can sign, send or change anything on the ledger, so there is no irreversible
 action. A busy key is read up to 5,000 transactions and the answer then says it is partial.
 
-Network URL: `<site>/three_numbers`. Other agent sites can call it. They get the
-network but not the page's actions (runtime rule), so the network has a third agent,
-`ledger_reader`, that reads keys through the public MCP service below. The caller's
-visitor sees a consent card naming the service before anything is sent, and only the
-address and network go out.
+Network URL: `<site>/three_numbers`. Other agent sites can call it. Through its action
+bridge (`bridge/bridge-actions.js`), Three Numbers shares `read_key` with every site, so a
+caller's agents read keys with the same code; the `ledger_reader` agent and the public MCP
+service below remain a fallback for any MCP client. A caller's visitor sees a consent card
+before anything is sent, and only the address and network go out.
+
+**Partner site.** The `reader` agent calls
+[Rule in force](https://rule-in-force.onrender.com/) (`https://rule-in-force.onrender.com/rule_in_force`)
+when a deal relies on a French law article: was it in force on that date, and was its
+text anchored on the XRP Ledger before? Rule in force shares its reads through its own
+bridge, so the answer comes with a Merkle proof rebuilt in the visitor's browser.
 
 ## The MCP service (`mcp/server.mjs`)
 

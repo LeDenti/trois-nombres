@@ -160,12 +160,14 @@ function focusedIds() {
   return [...document.elements].filter(([, element]) => element.focused).map(([id]) => id);
 }
 
-test("network is valid, three agents, grounded, peer rules kept, no partner", async () => {
+test("network is valid, three agents, grounded, calls Rule in force as a partner", async () => {
   const loaded = await load();
   assert.deepEqual(validateNetwork(loaded.network).errors, []);
   assert.equal(loaded.network.findFrontMan(), "reader");
   assert.deepEqual(loaded.config.tools.map((agent) => agent.name), ["reader", "method_guide", "ledger_reader"]);
-  assert.deepEqual(loaded.manifest.allowed_peers, [new URL(loaded.config.tools[2].tools[0].url).origin], "allowed_peers lists exactly the MCP origin");
+  assert.deepEqual(loaded.manifest.allowed_peers, [new URL(loaded.config.tools[2].tools[0].url).origin, "https://rule-in-force.onrender.com"], "allowed_peers lists the MCP origin and the partner site");
+  assert.ok(loaded.config.tools[0].tools.includes("https://rule-in-force.onrender.com/rule_in_force"));
+  assert.equal(loaded.config.link_labels["https://rule-in-force.onrender.com/rule_in_force"], "Rule in force");
   assert.ok(!JSON.stringify(loaded.config).includes("make up a realistic response"));
   const instructions = loaded.network.getAgentSpec("reader").instructions;
   for (const phrase of [
@@ -176,12 +178,12 @@ test("network is valid, three agents, grounded, peer rules kept, no partner", as
     "This site cannot: say who owns a key",
     "Then give what the page offers instead",
     "Do not ask the visitor to confirm an irreversible action",
-    "When you have no website_* tools, another site's assistant is asking",
+    "Partner tools ask another site's assistant",
+    "ask rule_in_force with the code, article and date",
     "Never call a key good, bad, honest or a scammer.",
   ]) {
     assert.ok(instructions.includes(phrase), phrase);
   }
-  assert.ok(!instructions.includes("Partner tools ask another site's assistant"));
   assert.equal(loaded.manifest.peer_policy.mode, "closed");
   assert.deepEqual(loaded.manifest.networks[0].sample_queries, loaded.config.metadata.sample_queries);
 });

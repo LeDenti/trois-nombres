@@ -27,12 +27,13 @@
     "byok_router": "https://api.otari.ai/api/v1"
   },
   "allowed_peers": [
-    "https://three-numbers-mcp.onrender.com"
+    "https://three-numbers-mcp.onrender.com",
+    "https://rule-in-force.onrender.com"
   ],
   "peer_policy": {
     "mode": "closed",
     "deny_origins": [],
-    "note": "Local agents, page-local actions and the Three Numbers MCP service only."
+    "note": "Calls the Three Numbers MCP service and the Rule in force partner site in allowed_peers, after the visitor agrees."
   },
   "agent_mcp": {
     "protocol": "nsdeploy-agent-mcp/v1",
