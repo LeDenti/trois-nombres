@@ -154,6 +154,8 @@ export function summarize(address, txs, escrows, signerLists, network) {
       act: row.act,
       state: row.state,
       hash: row.hash,
+      // Made here so no model shortens a hash itself.
+      hashShort: `${row.hash.slice(0, 8)}…${row.hash.slice(-8)}`,
       link: explorer + row.hash,
     })),
   };

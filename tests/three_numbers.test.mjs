@@ -181,6 +181,7 @@ test("network is valid, three agents, grounded, calls Rule in force as a partner
     "Partner tools ask another site's assistant",
     "ask rule_in_force with the code, article and date",
     "Never call a key good, bad, honest or a scammer.",
+    "Never shorten a hash yourself",
   ]) {
     assert.ok(instructions.includes(phrase), phrase);
   }
@@ -230,6 +231,9 @@ test("summarize counts each rule exactly", () => {
   const states = Object.fromEntries(record.timeline.filter((row) => row.act === "Commitment signed").map((row) => [row.hash, row.state]));
   assert.deepEqual(Object.values(states).sort(), ["expired", "kept", "kept", "open"]);
   assert.ok(record.timeline[0].link.startsWith("https://testnet.xrpl.org/transactions/"));
+  for (const row of record.timeline) {
+    assert.equal(row.hashShort, `${row.hash.slice(0, 8)}…${row.hash.slice(-8)}`);
+  }
   assert.equal(record.timeline[0].dateText, "7 Nov 2026, 08:00 UTC");
   const mainnet = summarize(KEY, LEDGER[KEY].txs, [], [], "mainnet");
   assert.ok(mainnet.timeline[0].link.startsWith("https://livenet.xrpl.org/transactions/"));

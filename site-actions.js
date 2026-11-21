@@ -59,7 +59,7 @@ class SiteActions {
   static readKeyAction() {
     return {
       name: "read_key",
-      description: `Read one key's commitment record from a public XRPL node: signed, kept, expired, open on the ledger, defenders, acts for others, and the ${TIMELINE_FOR_AGENT} newest acts with explorer links. Does not change the page. Returns ok false with a reason for a bad address or a node error; found false when the key does not exist on that network; partial true when only the first transactions were read.`,
+      description: `Read one key's commitment record from a public XRPL node: signed, kept, expired, open on the ledger, defenders, acts for others, and the ${TIMELINE_FOR_AGENT} newest acts with explorer links and ready-made short hashes (hashShort). Does not change the page. Returns ok false with a reason for a bad address or a node error; found false when the key does not exist on that network; partial true when only the first transactions were read.`,
       effect: "read",
       inputSchema: KEY_SCHEMA,
       timeoutMs: 90000,
