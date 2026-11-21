@@ -24,7 +24,7 @@ import { effectiveModel, isPlaceholderModel, normalizeModelName } from "./model.
 import { normalizePresentation } from "./cruse.js";
 import { PRESENTATION_CSS, renderMarkdown, renderRichComponent } from "./cruse-render.js";
 import { createTurnStatusController } from "./turn-status.js";
-import { reviewActions } from "./action-transport.js";
+import { reviewActions, setActionWindowPrompt } from "./action-transport.js";
 import { OpenRouterConnect } from "./openrouter-connect.js";
 import { InUseLine } from "./in-use-line.js";
 
@@ -156,6 +156,7 @@ const BASE_CSS = PRESENTATION_CSS + `
 .ns-anode .ns-ameta{flex:1;min-width:0}
 .ns-anode .ns-aname{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ns-anode .ns-arole{font-size:11px;color:var(--ns-muted,#999)}
+.ns-anode .ns-aaddr{font-size:11px;color:var(--ns-muted,#999);overflow-wrap:anywhere}
 .ns-anode .ns-adot{width:9px;height:9px;border-radius:50%;background:#cbd5e1;flex:0 0 auto}
 .ns-anode.active{border-color:var(--ns-primary,#2563eb);box-shadow:0 0 0 3px color-mix(in srgb,var(--ns-primary,#2563eb) 18%,transparent)}
 .ns-anode.active .ns-adot{background:var(--ns-primary,#2563eb);animation:ns-pulse 1s ease-in-out infinite}
@@ -763,8 +764,12 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
     return { icon: "🧭", label: brand || "" };
   };
   const localHost = location.host;
-  const nodeMeta = new Map(); // host -> {label, role, icon, kind, origin}
+  const nodeMeta = new Map(); // host -> {label, role, icon, kind, origin, address}
   const nodeStatus = new Map(); // host -> idle|active|done
+  // A partner's address is its host and path, such as localhost:8081/marrow_point_harbor_tours,
+  // so the visitor sees which network on that host works for them.
+  const addressOf = (u) => u.host + u.pathname.replace(/\/+$/, "");
+  const networkNameOf = (u) => u.pathname.split("/").filter(Boolean).pop() || u.host;
   {
     const b = splitBrand(manifest?.brand || net?.name);
     nodeMeta.set(localHost, { label: b.label || net?.name, role: "your concierge", icon: b.icon, kind: "local" });
@@ -775,10 +780,12 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
     try {
       if (c.kind === "remote") {
         const u = new URL(ref);
-        if (!nodeMeta.has(u.host)) nodeMeta.set(u.host, { label: u.host, role: "partner network", icon: "🏢", kind: "remote", origin: u.origin });
+        // The same name the consent card uses: this page's link_labels, else the network's.
+        const label = net.linkLabels?.[ref] || networkNameOf(u);
+        if (!nodeMeta.has(u.host)) nodeMeta.set(u.host, { label: label, role: "partner network", icon: "🏢", kind: "remote", origin: u.origin, address: addressOf(u) });
       } else if (c.kind === "mcp") {
         const u = new URL(typeof ref === "string" ? ref : ref.url);
-        if (!nodeMeta.has(u.host)) nodeMeta.set(u.host, { label: "Destination service", role: "hosted MCP server", icon: "🌐", kind: "mcp", origin: u.origin });
+        if (!nodeMeta.has(u.host)) nodeMeta.set(u.host, { label: "Destination service", role: "hosted MCP server", icon: "🌐", kind: "mcp", origin: u.origin, address: addressOf(u) });
       }
     } catch {}
   }
@@ -787,8 +794,10 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
   const statusEl = root.querySelector("#ns-status");
   const statusText = root.querySelector("#ns-status-text");
   const labelOf = (host) => nodeMeta.get(host)?.label || host;
-  const ensureRemoteNode = (host, { brand = "", network = "" } = {}) => {
+  const ensureRemoteNode = (host, { brand = "", network = "", url = "" } = {}) => {
     if (!host || host === localHost) return null;
+    let address = "";
+    try { if (url) address = addressOf(new URL(url)); } catch {}
     let meta = nodeMeta.get(host);
     if (!meta) {
       const display = brand || network || host;
@@ -799,9 +808,13 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
         icon: b.icon || "🏢",
         kind: "remote",
         origin: host.startsWith("http") ? host : `http://${host}`,
+        address: address,
       };
       nodeMeta.set(host, meta);
-    } else if (brand || network) {
+      return meta;
+    }
+    if (address && !meta.address) meta.address = address;
+    if (brand || network) {
       const b = splitBrand(brand || network);
       meta.label = b.label || network || meta.label;
       if (brand) meta.icon = b.icon;
@@ -815,8 +828,12 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
       const st = nodeStatus.get(host) || "idle";
       const el = document.createElement("div");
       el.className = "ns-anode " + st;
+      // A break after each "/" and "_" lets a long address wrap between its words.
+      const address = meta.address
+        ? `<div class="ns-aaddr">${escapeHtml(meta.address).replace(/[/_]/g, "$&<wbr>")}</div>`
+        : "";
       el.innerHTML = `<span class="ns-aicon">${escapeHtml(meta.icon)}</span>` +
-        `<div class="ns-ameta"><div class="ns-aname">${escapeHtml(meta.label)}</div><div class="ns-arole">${escapeHtml(meta.role)}</div></div>` +
+        `<div class="ns-ameta"><div class="ns-aname">${escapeHtml(meta.label)}</div><div class="ns-arole">${escapeHtml(meta.role)}</div>${address}</div>` +
         `<span class="ns-adot" title="${st}"></span>`;
       el.addEventListener("click", () => openInspector(host));
       anodesEl.appendChild(el);
@@ -826,9 +843,10 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
 
   // NB: we deliberately do NOT fetch peer manifests here to pretty-up the labels.
   // That would contact partner origins on page load — before the user has consented
-  // to anything. Partner nodes show their host until the user approves a call and
-  // resolveRemote fetches the peer; the label is then updated from that already-
-  // fetched metadata (see the remote_fetch "end" handler below).
+  // to anything. Partner nodes show the name and address from this page's own config
+  // until the user approves a call and resolveRemote fetches the peer; the label
+  // is then updated from that already-fetched metadata (see the remote_fetch "end"
+  // handler below).
 
   const setActive = (host, busyText) => {
     for (const k of nodeStatus.keys()) if (nodeStatus.get(k) === "active") nodeStatus.set(k, "done");
@@ -844,7 +862,7 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
       switch (ev.kind) {
         case "run": for (const k of nodeStatus.keys()) nodeStatus.set(k, "idle"); setActive(localHost, "Planning your trip…"); break;
         case "remote_fetch":
-          ensureRemoteNode(ev.peerOrigin, { network: ev.network });
+          ensureRemoteNode(ev.peerOrigin, { network: ev.network, url: ev.url });
           setActive(ev.peerOrigin, `Loading ${labelOf(ev.peerOrigin)}…`);
           break;
         case "remote_call":
@@ -919,7 +937,10 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
   });
 
   // --- cross-network consent (approve calls to other hosted networks) ------
+  // Each partner's name by host, from its consent card, for the window prompt below.
+  const peerLabels = new Map();
   engine.onConsent = (info) => new Promise((resolve) => {
+    peerLabels.set(info.peerOrigin, info.peerLabel);
     statusEl.classList.remove("busy");
     statusText.textContent = `Waiting for your OK to contact ${info.peerLabel}…`;
     const tokens = info.est?.totalTokens ? `~${Number(info.est.totalTokens).toLocaleString()} tokens` : "";
@@ -948,6 +969,55 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
       }, { once: true }),
     );
   });
+
+  // --- partner action window (a partner's write opens its own site's window) ----
+  // Asked in the chat, with the partner's name, in place of the transport's generic
+  // dialog. The window opens in the visitor's click, so the browser does not block it.
+  setActionWindowPrompt(({ url, origin, brand, signal }) => new Promise((resolve, reject) => {
+    const host = new URL(origin).host;
+    const label = peerLabels.get(host) || brand || host;
+    statusEl.classList.remove("busy");
+    statusText.textContent = `Waiting for you to open ${label}…`;
+    const el = document.createElement("div");
+    el.className = "ns-msg bot ns-consent ns-action-window";
+    el.innerHTML =
+      `<div class="ns-consent-title"><b>${escapeHtml(label)}</b> will open its own window, so you can check and finish this there.</div>` +
+      `<div class="ns-consent-sub">Opens on ${escapeHtml(host)}</div>` +
+      `<div class="ns-consent-actions">` +
+        `<button data-d="open">Open ${escapeHtml(label)}</button>` +
+        `<button data-d="cancel" class="ghost">Cancel</button>` +
+      `</div>`;
+    msgs.appendChild(el);
+    msgs.scrollTop = msgs.scrollHeight;
+    const finish = (text) => {
+      const done = document.createElement("div");
+      done.className = "ns-consent-done";
+      done.textContent = text;
+      el.querySelector(".ns-consent-actions")?.replaceWith(done);
+    };
+    const stop = () => {
+      finish("✕ Cancelled");
+      statusEl.classList.add("busy");
+      reject(new Error("Action window cancelled; action not started."));
+    };
+    signal?.addEventListener("abort", stop, { once: true });
+    el.querySelector('[data-d="open"]').addEventListener("click", () => {
+      const popup = window.open(url, "_blank", "popup,width=700,height=650");
+      if (!popup) {
+        el.querySelector(".ns-consent-sub").textContent = "Your browser blocked the window. Allow pop-ups for this page, then click again.";
+        return;
+      }
+      signal?.removeEventListener("abort", stop);
+      finish(`✓ Opened ${label}`);
+      statusEl.classList.add("busy");
+      statusText.textContent = `Waiting for ${label}…`;
+      resolve(popup);
+    });
+    el.querySelector('[data-d="cancel"]').addEventListener("click", () => {
+      signal?.removeEventListener("abort", stop);
+      stop();
+    }, { once: true });
+  }));
 
   // --- node inspector (instructions + what the agent did) ------------------
   const modal = root.querySelector("#ns-modal");
@@ -983,7 +1053,7 @@ export function mountApp(root, { engine, trace, manifest, connect = null }) {
     modalCard.innerHTML =
       `<button class="ns-modal-close" title="Close">×</button>` +
       `<h4>${escapeHtml(meta.icon)} ${escapeHtml(meta.label)}</h4>` +
-      `<div class="ns-mrole">${escapeHtml(meta.role)} · ${escapeHtml(host)}</div>` +
+      `<div class="ns-mrole">${escapeHtml(meta.role)} · ${escapeHtml(meta.address || host)}</div>` +
       `<h5>Instructions</h5>` +
       (instructions ? `<pre>${escapeHtml(instructions)}</pre>` : `<div class="ns-mrole">Loaded when first contacted.</div>`) +
       `<h5>What it did this session</h5>` +
